@@ -1,0 +1,22 @@
+.DS_Store
+*.log
+
+# Go
+*.exe
+*.out
+*.test
+*.prof
+cover.out
+
+# Build output
+/automate-me
+/cmd/automate-me/automate-me
+/dist/
+
+# Local env
+.env
+.automate-me/
+
+# Editor
+.idea/
+.vscode/

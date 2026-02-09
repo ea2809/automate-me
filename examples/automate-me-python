@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+import subprocess
+
+def projects_dir():
+    return os.path.expanduser(os.getenv("AUTOMATE_ME_PROJECTS_DIR", "~/projects"))
+
+def list_projects():
+    base = projects_dir()
+    if not os.path.isdir(base):
+        return []
+    return sorted([name for name in os.listdir(base) if os.path.isdir(os.path.join(base, name))])
+
+def describe():
+    manifest = {
+        "schemaVersion": 1,
+        "plugin": {"id": "py-projects", "title": "Python Projects", "version": "0.1.0"},
+        "tasks": [
+            {
+                "name": "ls",
+                "title": "List project files",
+                "group": "Projects",
+                "description": "Select a project and run ls",
+                "inputs": [
+                    {
+                        "name": "project",
+                        "type": "enum",
+                        "required": True,
+                        "prompt": "Project",
+                        "choices": list_projects(),
+                    }
+                ],
+            }
+        ],
+    }
+    print(json.dumps(manifest))
+
+def run(task):
+    if task != "ls":
+        print(f"unknown task: {task}", file=sys.stderr)
+        sys.exit(1)
+    raw = sys.stdin.read()
+    payload = json.loads(raw) if raw.strip() else {}
+    project = payload.get("args", {}).get("project")
+    if not project:
+        print("missing required input: project", file=sys.stderr)
+        sys.exit(1)
+    path = os.path.join(projects_dir(), project)
+    if not os.path.isdir(path):
+        print(f"project not found: {path}", file=sys.stderr)
+        sys.exit(1)
+    os.execvp("ls", ["ls", path])
+
+def usage():
+    print("usage: plugin describe|run <task>", file=sys.stderr)
+    sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        usage()
+    cmd = sys.argv[1]
+    if cmd == "describe":
+        describe()
+    elif cmd == "run":
+        if len(sys.argv) < 3:
+            usage()
+        run(sys.argv[2])
+    else:
+        usage()

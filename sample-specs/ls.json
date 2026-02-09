@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "plugin": {
+    "id": "sample",
+    "title": "Sample",
+    "version": "0.1.0",
+    "exec": "/bin/ls",
+    "execMode": "direct"
+  },
+  "tasks": [
+    {
+      "name": "repo",
+      "title": "List repo files",
+      "group": "Sample",
+      "description": "Runs ls in the repo root",
+      "inputs": []
+    }
+  ]
+}
