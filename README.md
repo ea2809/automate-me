@@ -125,6 +125,22 @@ Two minimal protocol plugin examples (sanitized):
 - Clojure (Babashka): `examples/gitstatus.clj`
 - Python: `examples/automate-me-python`
 
+## Helpers
+
+Reusable helper plugins live in `helpers/`.
+
+- `helpers/package-json-scripts`: Python protocol plugin that reads a real `package.json`, publishes each entry in `scripts` as a task, and runs it with `npm`, `yarn`, or `pnpm` (auto-detected).
+- `helpers/package-json-scripts.js`: Node.js protocol plugin with the same behavior (no Python required).
+
+Quick setup (Node version):
+
+```bash
+mkdir -p .automate-me/bin
+cp helpers/package-json-scripts.js .automate-me/bin/package-json-scripts
+chmod +x .automate-me/bin/package-json-scripts
+automate-me list
+```
+
 ## Development
 
 ```bash
