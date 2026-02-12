@@ -52,39 +52,27 @@ func runInteractive(uiDriver UI) error {
 	}
 	state := SelectionState{}
 	lastArgs := make(map[string]map[string]any)
-	tasks, err := loadTasks(uiDriver, repoRoot)
+	tasks, err := refreshTasks(uiDriver, repoRoot)
 	if err != nil {
 		return err
 	}
+	return runInteractiveLoop(uiDriver, repoRoot, tasks, state, lastArgs)
+}
+
+func runInteractiveLoop(uiDriver UI, repoRoot string, tasks []core.TaskRecord, state SelectionState, lastArgs map[string]map[string]any) error {
 	for {
-		selected, nextState, err := uiDriver.SelectTask(tasks, state)
+		selected, updatedTasks, nextState, err := selectTaskWithRefresh(uiDriver, repoRoot, tasks, state)
 		if err != nil {
-			if errors.Is(err, ErrRefresh) {
-				tasks, err = loadTasks(uiDriver, repoRoot)
-				if err != nil {
-					return err
-				}
-				state = nextState
-				continue
-			}
 			return err
 		}
+		tasks = updatedTasks
 		state = nextState
-		taskID := core.TaskID(selected.PluginID, selected.Task.Name)
-		args, err := uiDriver.PromptInputs(selected.Task.Inputs, lastArgs[taskID])
+		taskID, args, err := runSelectedTask(uiDriver, selected, repoRoot, mustGetwd(), lastArgs)
+		if errors.Is(err, ErrUserCanceled) {
+			uiDriver.ClearScreen()
+			continue
+		}
 		if err != nil {
-			if errors.Is(err, ErrUserCanceled) {
-				uiDriver.ClearScreen()
-				continue
-			}
-			return err
-		}
-		uiDriver.ClearScreen()
-		uiDriver.RenderRunning(taskID, selected.PluginTitle)
-		if err := core.RunPluginTask(selected, repoRoot, mustGetwd(), args); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-		if err := uiDriver.WaitForEnter(); err != nil {
 			return err
 		}
 		uiDriver.ClearScreen()
@@ -92,16 +80,51 @@ func runInteractive(uiDriver UI) error {
 	}
 }
 
+func selectTaskWithRefresh(uiDriver UI, repoRoot string, tasks []core.TaskRecord, state SelectionState) (core.TaskRecord, []core.TaskRecord, SelectionState, error) {
+	for {
+		selected, nextState, err := uiDriver.SelectTask(tasks, state)
+		if errors.Is(err, ErrRefresh) {
+			updatedTasks, loadErr := refreshTasks(uiDriver, repoRoot)
+			if loadErr != nil {
+				return core.TaskRecord{}, tasks, nextState, loadErr
+			}
+			tasks = updatedTasks
+			state = nextState
+			continue
+		}
+		if err != nil {
+			return core.TaskRecord{}, tasks, nextState, err
+		}
+		return selected, tasks, nextState, nil
+	}
+}
+
+func runSelectedTask(uiDriver UI, selected core.TaskRecord, repoRoot, cwd string, lastArgs map[string]map[string]any) (string, map[string]any, error) {
+	taskID := core.TaskID(selected.PluginID, selected.Task.Name)
+	args, err := uiDriver.PromptInputs(selected.Task.Inputs, lastArgs[taskID])
+	if err != nil {
+		return "", nil, err
+	}
+	uiDriver.ClearScreen()
+	uiDriver.RenderRunning(taskID, selected.PluginTitle)
+	if err := core.RunPluginTask(selected, repoRoot, cwd, args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	if err := uiDriver.WaitForEnter(); err != nil {
+		return "", nil, err
+	}
+	return taskID, args, nil
+}
+
 func runTaskByID(uiDriver UI, id string) error {
 	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
 	if err != nil {
 		return err
 	}
-	plugins, err := core.LoadPlugins(repoRoot)
+	tasks, err := loadTasks(repoRoot)
 	if err != nil {
 		return err
 	}
-	tasks := core.BuildTasks(plugins)
 	for _, task := range tasks {
 		if core.TaskID(task.PluginID, task.Task.Name) == id {
 			args, err := uiDriver.PromptInputs(task.Task.Inputs, nil)
@@ -119,12 +142,10 @@ func listTasksWithWriter(writer io.Writer) error {
 	if err != nil {
 		return err
 	}
-	plugins, err := core.LoadPlugins(repoRoot)
+	tasks, err := loadTasks(repoRoot)
 	if err != nil {
 		return err
 	}
-	tasks := core.BuildTasks(plugins)
-	sortTasks(tasks)
 	for _, task := range tasks {
 		fmt.Fprintf(writer, "%s\t%s\t%s\n", core.TaskID(task.PluginID, task.Task.Name), task.Task.Title, task.Task.Description)
 	}
@@ -153,9 +174,15 @@ func listPluginsWithWriter(writer io.Writer) error {
 	return nil
 }
 
-func loadTasks(uiDriver UI, repoRoot string) ([]core.TaskRecord, error) {
+func refreshTasks(uiDriver UI, repoRoot string) ([]core.TaskRecord, error) {
 	uiDriver.ClearScreen()
 	uiDriver.RenderLoading("Loading tasks...")
+	tasks, err := loadTasks(repoRoot)
+	uiDriver.ClearScreen()
+	return tasks, err
+}
+
+func loadTasks(repoRoot string) ([]core.TaskRecord, error) {
 	plugins, err := core.LoadPlugins(repoRoot)
 	if err != nil {
 		return nil, err
@@ -165,7 +192,6 @@ func loadTasks(uiDriver UI, repoRoot string) ([]core.TaskRecord, error) {
 		return nil, fmt.Errorf("no tasks found")
 	}
 	sortTasks(tasks)
-	uiDriver.ClearScreen()
 	return tasks, nil
 }
 
