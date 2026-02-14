@@ -20,7 +20,11 @@ var ErrRefresh = errors.New("refresh requested")
 
 func RunInteractive(uiDriver UI) error {
 	uiDriver.ClearScreen()
-	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
+	cwd, err := getwd()
+	if err != nil {
+		return err
+	}
+	repoRoot, err := resolveRepoRoot(cwd)
 	if err != nil {
 		return err
 	}
@@ -30,10 +34,10 @@ func RunInteractive(uiDriver UI) error {
 	if err != nil {
 		return err
 	}
-	return runInteractiveLoop(uiDriver, repoRoot, tasks, state, lastArgs)
+	return runInteractiveLoop(uiDriver, repoRoot, cwd, tasks, state, lastArgs)
 }
 
-func runInteractiveLoop(uiDriver UI, repoRoot string, tasks []core.TaskRecord, state SelectionState, lastArgs map[string]map[string]any) error {
+func runInteractiveLoop(uiDriver UI, repoRoot, cwd string, tasks []core.TaskRecord, state SelectionState, lastArgs map[string]map[string]any) error {
 	for {
 		selected, updatedTasks, nextState, err := selectTaskWithRefresh(uiDriver, repoRoot, tasks, state)
 		if err != nil {
@@ -41,7 +45,7 @@ func runInteractiveLoop(uiDriver UI, repoRoot string, tasks []core.TaskRecord, s
 		}
 		tasks = updatedTasks
 		state = nextState
-		taskID, args, err := runSelectedTask(uiDriver, selected, repoRoot, mustGetwd(), lastArgs)
+		taskID, args, err := runSelectedTask(uiDriver, selected, repoRoot, cwd, lastArgs)
 		if errors.Is(err, ErrUserCanceled) {
 			uiDriver.ClearScreen()
 			continue
@@ -91,11 +95,11 @@ func runSelectedTask(uiDriver UI, selected core.TaskRecord, repoRoot, cwd string
 }
 
 func RunTaskByID(uiDriver UI, id string) error {
-	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
+	cwd, err := getwd()
 	if err != nil {
 		return err
 	}
-	tasks, err := loadTasks(repoRoot)
+	repoRoot, tasks, err := resolveRepoAndTasks(cwd)
 	if err != nil {
 		return err
 	}
@@ -105,18 +109,14 @@ func RunTaskByID(uiDriver UI, id string) error {
 			if err != nil {
 				return err
 			}
-			return core.RunPluginTask(task, repoRoot, mustGetwd(), args)
+			return core.RunPluginTask(task, repoRoot, cwd, args)
 		}
 	}
 	return fmt.Errorf("task not found: %s", id)
 }
 
 func ListTasksWithWriter(writer io.Writer) error {
-	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
-	if err != nil {
-		return err
-	}
-	tasks, err := loadTasks(repoRoot)
+	_, tasks, err := currentRepoAndTasks()
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func ListTasksWithWriter(writer io.Writer) error {
 }
 
 func ListPluginsWithWriter(writer io.Writer) error {
-	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
+	repoRoot, err := currentRepoRoot()
 	if err != nil {
 		return err
 	}
@@ -175,12 +175,4 @@ func sortTasks(tasks []core.TaskRecord) {
 		aj := core.TaskID(tasks[j].PluginID, tasks[j].Task.Name)
 		return ai < aj
 	})
-}
-
-func mustGetwd() string {
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	return wd
 }

@@ -67,11 +67,7 @@ func TestRunInteractiveRespectsDefaults(t *testing.T) {
 		t.Skip("skipping shell script test on windows")
 	}
 	base := t.TempDir()
-	repo := filepath.Join(base, "repo")
-	specDir := filepath.Join(repo, ".automate-me", "specs")
-	if err := os.MkdirAll(specDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
+	repo, specDir := createRepoWithLocalSpecsDir(t, base)
 	outputFile := filepath.Join(base, "out.txt")
 	script := filepath.Join(base, "run.sh")
 	scriptBody := "#!/bin/sh\n" +
@@ -87,15 +83,8 @@ func TestRunInteractiveRespectsDefaults(t *testing.T) {
   "plugin": {"id": "p", "title": "P", "exec": "` + script + `"},
   "tasks": [{"name": "t", "title": "t"}]
 }`
-	if err := os.WriteFile(filepath.Join(specDir, "p.json"), []byte(spec), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
-	if err := os.Chdir(repo); err != nil {
-		t.Fatal(err)
-	}
+	writeSpecFile(t, specDir, "p.json", spec)
+	chdirTo(t, repo)
 
 	ui := &sequenceUI{
 		argsSequence: []map[string]any{

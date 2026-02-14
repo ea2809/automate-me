@@ -2,8 +2,6 @@ package app
 
 import (
 	"bytes"
-	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -14,25 +12,14 @@ func TestListTasksOutputs(t *testing.T) {
 		t.Skip("skipping shell script test on windows")
 	}
 	base := t.TempDir()
-	repo := filepath.Join(base, "repo")
-	specDir := filepath.Join(repo, ".automate-me", "specs")
-	if err := os.MkdirAll(specDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
+	repo, specDir := createRepoWithLocalSpecsDir(t, base)
 	spec := `{
   "schemaVersion": 1,
   "plugin": {"id": "p", "title": "P", "exec": "/bin/echo"},
   "tasks": [{"name": "t", "title": "Title", "description": "Desc"}]
 }`
-	if err := os.WriteFile(filepath.Join(specDir, "p.json"), []byte(spec), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
-	if err := os.Chdir(repo); err != nil {
-		t.Fatal(err)
-	}
+	writeSpecFile(t, specDir, "p.json", spec)
+	chdirTo(t, repo)
 
 	var buf bytes.Buffer
 	if err := ListTasksWithWriter(&buf); err != nil {
@@ -49,25 +36,14 @@ func TestListPluginsOutputs(t *testing.T) {
 		t.Skip("skipping shell script test on windows")
 	}
 	base := t.TempDir()
-	repo := filepath.Join(base, "repo")
-	specDir := filepath.Join(repo, ".automate-me", "specs")
-	if err := os.MkdirAll(specDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
+	repo, specDir := createRepoWithLocalSpecsDir(t, base)
 	spec := `{
   "schemaVersion": 1,
   "plugin": {"id": "p", "title": "P", "exec": "/bin/echo"},
   "tasks": []
 }`
-	if err := os.WriteFile(filepath.Join(specDir, "p.json"), []byte(spec), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
-	if err := os.Chdir(repo); err != nil {
-		t.Fatal(err)
-	}
+	writeSpecFile(t, specDir, "p.json", spec)
+	chdirTo(t, repo)
 
 	var buf bytes.Buffer
 	if err := ListPluginsWithWriter(&buf); err != nil {
@@ -81,16 +57,8 @@ func TestListPluginsOutputs(t *testing.T) {
 
 func TestListPluginsEmpty(t *testing.T) {
 	base := t.TempDir()
-	repo := filepath.Join(base, "repo")
-	if err := os.MkdirAll(filepath.Join(repo, ".automate-me"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
-	if err := os.Chdir(repo); err != nil {
-		t.Fatal(err)
-	}
+	repo := createRepoWithLocalConfig(t, base)
+	chdirTo(t, repo)
 
 	var buf bytes.Buffer
 	if err := ListPluginsWithWriter(&buf); err != nil {

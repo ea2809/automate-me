@@ -26,7 +26,7 @@ func ImportSpec(args []string) error {
 	}
 
 	path := fs.Arg(0)
-	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
+	repoRoot, err := currentRepoRoot()
 	if err != nil {
 		return err
 	}
