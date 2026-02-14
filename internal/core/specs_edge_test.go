@@ -45,7 +45,11 @@ func TestImportSpecFileLocalNoRepo(t *testing.T) {
 func TestLoadSpecsExecModeProtocol(t *testing.T) {
 	base := t.TempDir()
 	repo := filepath.Join(base, "repo")
-	localDir := filepath.Join(repo, ".automate-me", "specs")
+	paths := newPathConfig(repo)
+	localDir, err := paths.localSpecs()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := os.MkdirAll(localDir, 0o755); err != nil {
 		t.Fatal(err)
 	}

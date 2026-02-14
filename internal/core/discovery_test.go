@@ -14,10 +14,10 @@ func TestFindRepoRoot(t *testing.T) {
 	if err := os.MkdirAll(sub, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Mkdir(filepath.Join(repo, ".git"), 0o755); err != nil {
+	if err := os.Mkdir(filepath.Join(repo, gitDirName), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Mkdir(filepath.Join(repo, ".automate-me"), 0o755); err != nil {
+	if err := os.Mkdir(filepath.Join(repo, localConfigDirName), 0o755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -36,9 +36,13 @@ func TestDiscoverPluginCandidates(t *testing.T) {
 	}
 	base := t.TempDir()
 	repo := filepath.Join(base, "repo")
-	localBin := filepath.Join(repo, ".automate-me", "bin")
+	paths := newPathConfig(repo)
+	localBin, err := paths.localBin()
+	if err != nil {
+		t.Fatal(err)
+	}
 	globalConfig := filepath.Join(base, "config")
-	globalBin := filepath.Join(globalConfig, "automate-me", "bin")
+	globalBin := filepath.Join(globalConfig, globalConfigDirName, binDirName)
 	if err := os.MkdirAll(localBin, 0o755); err != nil {
 		t.Fatal(err)
 	}

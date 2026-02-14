@@ -35,7 +35,7 @@ func TestListTasksOutputs(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := listTasksWithWriter(&buf); err != nil {
+	if err := ListTasksWithWriter(&buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -70,7 +70,7 @@ func TestListPluginsOutputs(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := listPluginsWithWriter(&buf); err != nil {
+	if err := ListPluginsWithWriter(&buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -93,7 +93,7 @@ func TestListPluginsEmpty(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := listPluginsWithWriter(&buf); err != nil {
+	if err := ListPluginsWithWriter(&buf); err != nil {
 		t.Fatal(err)
 	}
 	if strings.TrimSpace(buf.String()) != "no plugins found" {

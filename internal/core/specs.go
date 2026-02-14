@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-const (
-	localSpecDirName  = ".automate-me/specs"
-	globalSpecDirName = "automate-me/specs"
-)
-
 func ImportSpecFile(srcPath, repoRoot string, scope PluginScope) (string, error) {
 	data, err := os.ReadFile(srcPath)
 	if err != nil {
@@ -113,18 +108,13 @@ func readSpecDir(dir string, scope PluginScope) ([]PluginRecord, error) {
 }
 
 func specDir(repoRoot string, scope PluginScope) (string, error) {
+	paths := newPathConfig(repoRoot)
+
 	switch scope {
 	case ScopeLocal:
-		if repoRoot == "" {
-			return "", fmt.Errorf("no repo root for local spec")
-		}
-		return filepath.Join(repoRoot, localSpecDirName), nil
+		return paths.localSpecs()
 	case ScopeGlobal:
-		configDir, err := configBaseDir()
-		if err != nil {
-			return "", err
-		}
-		return filepath.Join(configDir, globalSpecDirName), nil
+		return paths.globalSpecs()
 	default:
 		return "", fmt.Errorf("unknown scope %q", scope)
 	}

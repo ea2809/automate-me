@@ -9,7 +9,7 @@ import (
 	"github.com/ea2809/automate-me/internal/core"
 )
 
-func importSpec(args []string) error {
+func ImportSpec(args []string) error {
 	fs := flag.NewFlagSet("import", flag.ContinueOnError)
 	var useGlobal bool
 	var useLocal bool

@@ -41,7 +41,7 @@ func TestRunTaskByIDNotFound(t *testing.T) {
 	if err := os.Chdir(repo); err != nil {
 		t.Fatal(err)
 	}
-	if err := runTaskByID(fakeUI{}, "missing:task"); err == nil {
+	if err := RunTaskByID(fakeUI{}, "missing:task"); err == nil {
 		t.Fatal("expected error for missing task")
 	}
 }
@@ -81,7 +81,7 @@ func TestRunTaskByIDExecutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := runTaskByID(fakeUI{}, "p:t"); err != nil {
+	if err := RunTaskByID(fakeUI{}, "p:t"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(outputFile); err != nil {

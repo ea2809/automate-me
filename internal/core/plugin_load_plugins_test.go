@@ -9,12 +9,13 @@ import (
 func TestLoadPluginsSpecPrecedence(t *testing.T) {
 	base := t.TempDir()
 	repo := filepath.Join(base, "repo")
-	if err := os.MkdirAll(filepath.Join(repo, ".automate-me"), 0o755); err != nil {
+	paths := newPathConfig(repo)
+	localSpecDir, err := paths.localSpecs()
+	if err != nil {
 		t.Fatal(err)
 	}
-	localSpecDir := filepath.Join(repo, ".automate-me", "specs")
 	globalConfig := filepath.Join(base, "config")
-	globalSpecDir := filepath.Join(globalConfig, "automate-me", "specs")
+	globalSpecDir := filepath.Join(globalConfig, globalConfigDirName, specsDirName)
 	if err := os.MkdirAll(localSpecDir, 0o755); err != nil {
 		t.Fatal(err)
 	}

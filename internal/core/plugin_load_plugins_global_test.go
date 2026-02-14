@@ -9,7 +9,7 @@ import (
 func TestLoadPluginsNoRepoRootLoadsGlobalSpecs(t *testing.T) {
 	base := t.TempDir()
 	configDir := filepath.Join(base, "config")
-	globalSpecDir := filepath.Join(configDir, "automate-me", "specs")
+	globalSpecDir := filepath.Join(configDir, globalConfigDirName, specsDirName)
 	if err := os.MkdirAll(globalSpecDir, 0o755); err != nil {
 		t.Fatal(err)
 	}

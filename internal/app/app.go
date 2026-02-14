@@ -10,7 +10,7 @@ import (
 	"github.com/ea2809/automate-me/internal/core"
 )
 
-const appName = "automate-me"
+const AppName = "automate-me"
 
 // ErrUserCanceled bubbles up from UI input.
 var ErrUserCanceled = errors.New("user canceled")
@@ -18,33 +18,7 @@ var ErrUserCanceled = errors.New("user canceled")
 // ErrRefresh indicates the UI requested a refresh.
 var ErrRefresh = errors.New("refresh requested")
 
-func Run(argv []string, uiDriver UI) error {
-	args := argv[1:]
-	if len(args) == 0 {
-		return runInteractive(uiDriver)
-	}
-
-	switch args[0] {
-	case "run":
-		if len(args) < 2 {
-			return fmt.Errorf("usage: %s run <taskId>", appName)
-		}
-		return runTaskByID(uiDriver, args[1])
-	case "list":
-		return listTasksWithWriter(os.Stdout)
-	case "plugins":
-		return listPluginsWithWriter(os.Stdout)
-	case "import":
-		return importSpec(args[1:])
-	case "help", "-h", "--help":
-		printUsage()
-		return nil
-	default:
-		return fmt.Errorf("unknown command: %s", args[0])
-	}
-}
-
-func runInteractive(uiDriver UI) error {
+func RunInteractive(uiDriver UI) error {
 	uiDriver.ClearScreen()
 	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
 	if err != nil {
@@ -116,7 +90,7 @@ func runSelectedTask(uiDriver UI, selected core.TaskRecord, repoRoot, cwd string
 	return taskID, args, nil
 }
 
-func runTaskByID(uiDriver UI, id string) error {
+func RunTaskByID(uiDriver UI, id string) error {
 	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
 	if err != nil {
 		return err
@@ -137,7 +111,7 @@ func runTaskByID(uiDriver UI, id string) error {
 	return fmt.Errorf("task not found: %s", id)
 }
 
-func listTasksWithWriter(writer io.Writer) error {
+func ListTasksWithWriter(writer io.Writer) error {
 	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
 	if err != nil {
 		return err
@@ -152,7 +126,7 @@ func listTasksWithWriter(writer io.Writer) error {
 	return nil
 }
 
-func listPluginsWithWriter(writer io.Writer) error {
+func ListPluginsWithWriter(writer io.Writer) error {
 	repoRoot, _, err := core.FindRepoRoot(mustGetwd())
 	if err != nil {
 		return err
@@ -209,16 +183,4 @@ func mustGetwd() string {
 		panic(err)
 	}
 	return wd
-}
-
-func printUsage() {
-	fmt.Printf(`%s
-
-Usage:
-  %s            Start interactive TUI
-  %s run <id>   Run task by id (plugin:task)
-  %s list       List tasks
-  %s plugins    List discovered plugins
-  %s import     Import a JSON spec
-`, appName, appName, appName, appName, appName, appName)
 }

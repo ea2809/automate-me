@@ -103,7 +103,7 @@ func TestRunInteractiveRespectsDefaults(t *testing.T) {
 			{"value": "second"},
 		},
 	}
-	if err := runInteractive(ui); err != ErrUserCanceled {
+	if err := RunInteractive(ui); err != ErrUserCanceled {
 		t.Fatalf("expected cancel, got %v", err)
 	}
 	data, err := os.ReadFile(outputFile)
@@ -115,11 +115,5 @@ func TestRunInteractiveRespectsDefaults(t *testing.T) {
 	}
 	if string(data) == "first\n" {
 		t.Fatal("expected second run to overwrite output")
-	}
-}
-
-func TestRunHelp(t *testing.T) {
-	if err := Run([]string{"automate-me", "help"}, cancelUI{}); err != nil {
-		t.Fatal(err)
 	}
 }

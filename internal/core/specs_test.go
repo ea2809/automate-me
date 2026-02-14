@@ -33,4 +33,13 @@ func TestImportSpecFile(t *testing.T) {
 	if _, err := os.Stat(dest); err != nil {
 		t.Fatalf("expected spec written: %v", err)
 	}
+	paths := newPathConfig(repo)
+	localSpecsDir, err := paths.localSpecs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedDest := filepath.Join(localSpecsDir, "repo.json")
+	if dest != expectedDest {
+		t.Fatalf("expected destination %s, got %s", expectedDest, dest)
+	}
 }

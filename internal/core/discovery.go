@@ -24,10 +24,10 @@ func FindRepoRoot(start string) (string, bool, error) {
 	dir := start
 	var foundGit string
 	for {
-		if exists(filepath.Join(dir, ".automate-me")) {
+		if exists(filepath.Join(dir, localConfigDirName)) {
 			return dir, true, nil
 		}
-		if foundGit == "" && exists(filepath.Join(dir, ".git")) {
+		if foundGit == "" && exists(filepath.Join(dir, gitDirName)) {
 			foundGit = dir
 		}
 		parent := filepath.Dir(dir)
@@ -43,9 +43,14 @@ func FindRepoRoot(start string) (string, bool, error) {
 }
 
 func discoverPluginCandidates(repoRoot string) ([]pluginCandidate, error) {
+	paths := newPathConfig(repoRoot)
+
 	var candidates []pluginCandidate
 	if repoRoot != "" {
-		localDir := filepath.Join(repoRoot, ".automate-me", "bin")
+		localDir, err := paths.localBin()
+		if err != nil {
+			return nil, err
+		}
 		locals, err := findExecutables(localDir)
 		if err != nil {
 			return nil, err
@@ -55,11 +60,10 @@ func discoverPluginCandidates(repoRoot string) ([]pluginCandidate, error) {
 		}
 	}
 
-	configDir, err := configBaseDir()
+	globalDir, err := paths.globalBin()
 	if err != nil {
 		return nil, err
 	}
-	globalDir := filepath.Join(configDir, "automate-me", "bin")
 	globals, err := findExecutables(globalDir)
 	if err != nil {
 		return nil, err

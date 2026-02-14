@@ -9,7 +9,11 @@ import (
 func TestLoadSpecsSkipsInvalid(t *testing.T) {
 	base := t.TempDir()
 	repo := filepath.Join(base, "repo")
-	specDir := filepath.Join(repo, ".automate-me", "specs")
+	paths := newPathConfig(repo)
+	specDir, err := paths.localSpecs()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := os.MkdirAll(specDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
